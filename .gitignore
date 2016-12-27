@@ -1,10 +1,14 @@
 interview.iml
 interview.ipr
 interview.iws
-target/
+build/
+.gradle/
 .classpath
 .project
 .settings/
 /bin/
+/out
 .DS_Store
 python/graph/__pycache__/
+python/.idea
+target/

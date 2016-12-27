@@ -1,103 +1,147 @@
 package com.interview.suffixprefix;
 
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Date 04/25/2016
+ * @author Tushar Roy
+ *
+ * Insert/delete/search into trie data structure
+ *
+ * Reference
+ * https://en.wikipedia.org/wiki/Trie
+ */
 public class Trie {
 
-    private Node root = new Node();
-    private static int NUM_OF_CHAR = 256;
-    static class Node{
-        Node[] child = new Node[NUM_OF_CHAR];
-        boolean isWord;
-    }
-    
-    public void insert(char[] str){
-        
-        Node start = root;
-        for(char ch : str){
-            if(start.child[ch] != null){
-                start = start.child[ch];
-            }else{
-                start.child[ch] = new Node();
-                start = start.child[ch];
-            }
+    private class TrieNode {
+        Map<Character, TrieNode> children;
+        boolean endOfWord;
+        public TrieNode() {
+            children = new HashMap<>();
+            endOfWord = false;
         }
-        start.isWord = true;
     }
-    
-    public void delete(char[] str){
-        
-        deleteRecursively(root, str, 0);
+
+    private final TrieNode root;
+    public Trie() {
+        root = new TrieNode();
     }
-    
-    public boolean deleteRecursively(Node root,char[] str,int pos){
-        
-        if(pos == str.length){
-            if(root.isWord){
-                root.isWord = false;
-                boolean hasChild = hasAnyOtherChild(root);
-                if(!hasChild){
-                    return true;
-                }
+
+    /**
+     * Iterative implementation of insert into trie
+     */
+    public void insert(String word) {
+        TrieNode current = root;
+        for (int i = 0; i < word.length(); i++) {
+            char ch = word.charAt(i);
+            TrieNode node = current.children.get(ch);
+            if (node == null) {
+                node = new TrieNode();
+                current.children.put(ch, node);
             }
+            current = node;
+        }
+        //mark the current nodes endOfWord as true
+        current.endOfWord = true;
+    }
+
+    /**
+     * Recursive implementation of insert into trie
+     */
+    public void insertRecursive(String word) {
+        insertRecursive(root, word, 0);
+    }
+
+
+    private void insertRecursive(TrieNode current, String word, int index) {
+        if (index == word.length()) {
+            //if end of word is reached then mark endOfWord as true on current node
+            current.endOfWord = true;
+            return;
+        }
+        char ch = word.charAt(index);
+        TrieNode node = current.children.get(ch);
+
+        //if node does not exists in map then create one and put it into map
+        if (node == null) {
+            node = new TrieNode();
+            current.children.put(ch, node);
+        }
+        insertRecursive(node, word, index + 1);
+    }
+
+    /**
+     * Iterative implementation of search into trie.
+     */
+    public boolean search(String word) {
+        TrieNode current = root;
+        for (int i = 0; i < word.length(); i++) {
+            char ch = word.charAt(i);
+            TrieNode node = current.children.get(ch);
+            //if node does not exist for given char then return false
+            if (node == null) {
+                return false;
+            }
+            current = node;
+        }
+        //return true of current's endOfWord is true else return false.
+        return current.endOfWord;
+    }
+
+    /**
+     * Recursive implementation of search into trie.
+     */
+    public boolean searchRecursive(String word) {
+        return searchRecursive(root, word, 0);
+    }
+    private boolean searchRecursive(TrieNode current, String word, int index) {
+        if (index == word.length()) {
+            //return true of current's endOfWord is true else return false.
+            return current.endOfWord;
+        }
+        char ch = word.charAt(index);
+        TrieNode node = current.children.get(ch);
+        //if node does not exist for given char then return false
+        if (node == null) {
             return false;
         }
-        
-        if(root == null){
-            return false;
-        }
-        
-        boolean r = deleteRecursively(root.child[str[pos]], str, pos+1);
-        if(r == false){
-            return false;
-        }
-        root.child[str[pos]] = null;
-        
-        boolean hasChild = hasAnyOtherChild(root);
-        return !hasChild && !root.isWord;
+        return searchRecursive(node, word, index + 1);
     }
-    
-    public boolean hasAnyOtherChild(Node root){
-        for(int i=0; i < NUM_OF_CHAR; i++){
-            if(root.child[i] != null){
-                return true;
+
+    /**
+     * Delete word from trie.
+     */
+    public void delete(String word) {
+        delete(root, word, 0);
+    }
+
+    /**
+     * Returns true if parent should delete the mapping
+     */
+    private boolean delete(TrieNode current, String word, int index) {
+        if (index == word.length()) {
+            //when end of word is reached only delete if currrent.endOfWord is true.
+            if (!current.endOfWord) {
+                return false;
             }
+            current.endOfWord = false;
+            //if current has no other mapping then return true
+            return current.children.size() == 0;
+        }
+        char ch = word.charAt(index);
+        TrieNode node = current.children.get(ch);
+        if (node == null) {
+            return false;
+        }
+        boolean shouldDeleteCurrentNode = delete(node, word, index + 1);
+
+        //if true is returned then delete the mapping of character and trienode reference from map.
+        if (shouldDeleteCurrentNode) {
+            current.children.remove(ch);
+            //return true if no mappings are left in the map.
+            return current.children.size() == 0;
         }
         return false;
     }
-    
-    public boolean search(char[] key){
-        
-        Node start = root;
-        for(char ch : key){
-            if(start.child[ch] == null){
-                return false;
-            }
-            start = start.child[ch];
-        }
-        
-        return true;
-    }
-    
-    private void displayTrie(Node root){
-        Node start = root;
-        System.out.println(root.isWord);
-        for(int i=0; i < NUM_OF_CHAR ; i++){
-            if(start.child[i] != null){
-                System.out.println((char)i);
-                displayTrie(start.child[i]);
-            }
-        }
-    }
-    
-    public static void main(String args[]){
-        Trie t = new Trie();
-        t.insert("A".toCharArray());
-        t.insert("Tushar".toCharArray());
-        t.insert("TusharRoy".toCharArray());
-        t.insert("Anisweta".toCharArray());
-        t.insert("AniswetaS".toCharArray());
-        t.displayTrie(t.root);
-        t.delete("TusharRoy".toCharArray());
-        t.displayTrie(t.root);
-    }
-    
 }
